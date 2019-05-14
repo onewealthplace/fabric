@@ -21,7 +21,7 @@ package XXX
 
 //import "fmt"
 //import "os"
-import "github.com/milagro-crypto/amcl/version3/go/amcl"
+import "github.com/onewealthplace/milagro-amcl/version3/go/amcl"
 
 //var debug bool = false
 
@@ -44,13 +44,13 @@ func FF_EXCESS(a* BIG) Chunk {
 func ff_pexceed(a *BIG,b *BIG) bool {
 	ea:=FF_EXCESS(a)
 	eb:=FF_EXCESS(b)
-	if (ea+1)>P_FEXCESS/(eb+1) {return true}
+	if DChunk(ea+1)*DChunk(eb+1)>DChunk(P_FEXCESS) {return true}
 	return false
 }
 
 func ff_sexceed(a *BIG) bool {
 	ea:=FF_EXCESS(a)
-	if (ea+1)>P_FEXCESS/(ea+1) {return true}
+	if DChunk(ea+1)*DChunk(ea+1)>DChunk(P_FEXCESS) {return true}
 	return false
 }
 
@@ -645,7 +645,7 @@ func (F *FF) random(rng *amcl.RAND) {
 }
 
 /* generate random x less than p */
-func (F *FF) randomnum(p *FF,rng *amcl.RAND) {
+func (F *FF) Randomnum(p *FF,rng *amcl.RAND) {
 	n:=F.length
 	d:=NewFFint(2*n)
 
@@ -889,7 +889,7 @@ func prime(p *FF,rng *amcl.RAND) bool {
 	if s==0 {return false}
 
 	for i:=0;i<10;i++ {
-		x.randomnum(p,rng)
+		x.Randomnum(p,rng)
 		x.pow(d,p)
 
 		if (ff_comp(x,unity)==0 || ff_comp(x,nm1)==0) {continue}

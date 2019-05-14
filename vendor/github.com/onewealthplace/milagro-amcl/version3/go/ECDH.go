@@ -19,10 +19,10 @@ under the License.
 
 /* Elliptic Curve API high-level functions  */
 
-package FP256BN
+package XXX
 
 //import "fmt"
-import "github.com/milagro-crypto/amcl/version3/go/amcl"
+import "github.com/onewealthplace/milagro-amcl/version3/go/amcl"
 
 const INVALID_PUBLIC_KEY int=-2
 const ERROR int=-3

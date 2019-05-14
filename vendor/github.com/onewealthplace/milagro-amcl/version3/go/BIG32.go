@@ -19,15 +19,15 @@ under the License.
 
 /* AMCL BIG number class */ 
 
-package FP256BN
+package XXX
 
 import "strconv"
-import "github.com/milagro-crypto/amcl/version3/go/amcl"
+import "github.com/onewealthplace/milagro-amcl/version3/go/amcl"
 
 //import "fmt"
 
-const MODBYTES uint=32
-const BASEBITS uint=56
+const MODBYTES uint=@NB@
+const BASEBITS uint=@BASE@
 
 const NLEN int=int((1+((8*MODBYTES-1)/BASEBITS)))
 const DNLEN int=2*NLEN
@@ -48,18 +48,8 @@ type DBIG struct {
 	w [2*NLEN]Chunk
 }
 
-/*
-func (r *BIG) isok() bool {
-	ok:=true
-	for i:=0;i<NLEN;i++ {
-		if (r.w[i]>>BASEBITS)!=0 {
-			ok=false
-		}
-	}
-	return ok;
-}
-*/
-/***************** 64-bit specific code ****************/
+/***************** 32-bit specific code ****************/
+
 
 /* First the 32/64-bit dependent BIG code */
 /* Note that because of the lack of a 128-bit integer, 32 and 64-bit code needs to be done differently */
@@ -67,101 +57,112 @@ func (r *BIG) isok() bool {
 /* return a*b as DBIG */
 func mul(a *BIG,b *BIG) *DBIG {
 	c:=NewDBIG()
-	carry:= Chunk(0)
-//	a.norm()
-//	b.norm()
-
-//	if !a.isok() || !b.isok() {fmt.Printf("Problem in mul\n")}
-
+	var d [NLEN]DChunk
 
 	for i:=0;i<NLEN;i++ {
-		carry=0
-		for j:=0;j<NLEN;j++ {
-			carry,c.w[i+j]=muladd(a.w[i],b.w[j],carry,c.w[i+j])
-			//carry=c.muladd(a.w[i],b.w[j],carry,i+j)
-		}
-		c.w[NLEN+i]=carry
+		d[i]=DChunk(a.w[i])*DChunk(b.w[i])
 	}
-	
+	s:=d[0]
+	t:=s; c.w[0]=Chunk(t)&BMASK; co:=t>>BASEBITS
+
+	for k:=1;k<NLEN;k++ {
+		s+=d[k]; t=co+s; for i:=k;i>=1+k/2;i-- {t+=DChunk(a.w[i]-a.w[k-i])*DChunk(b.w[k-i]-b.w[i])}; c.w[k]=Chunk(t)&BMASK; co=t>>BASEBITS
+	}
+
+	for k:=NLEN;k<2*NLEN-1;k++ {
+		s-=d[k-NLEN]; t=co+s; for i:=NLEN-1;i>=1+k/2;i-- {t+=DChunk(a.w[i]-a.w[k-i])*DChunk(b.w[k-i]-b.w[i])}; c.w[k]=Chunk(t)&BMASK; co=t>>BASEBITS
+	}
+	c.w[2*NLEN-1]=Chunk(co)
+
 	return c
 }
 
 /* return a^2 as DBIG */
 func sqr(a *BIG) *DBIG {
 	c:=NewDBIG()
-	carry:= Chunk(0)
-//	a.norm()
 
-//if !a.isok() {fmt.Printf("Problem in sqr")}
+	t:=DChunk(a.w[0])*DChunk(a.w[0])
+	c.w[0]=Chunk(t)&BMASK; co:=t>>BASEBITS
 
-	for i:=0;i<NLEN;i++ {
-		carry=0;
-		for j:=i+1;j<NLEN;j++ {
-			carry,c.w[i+j]=muladd(2*a.w[i],a.w[j],carry,c.w[i+j])
-			//carry=c.muladd(2*a.w[i],a.w[j],carry,i+j)
-		}
-		c.w[NLEN+i]=carry
+
+	for j:=1;j<NLEN-1; {
+		t=DChunk(a.w[j])*DChunk(a.w[0])
+		for i:=1; i<(j+1)/2; i++ {t+=DChunk(a.w[j-i])*DChunk(a.w[i]) }
+		t+=t; t+=co
+		c.w[j]=Chunk(t)&BMASK
+		co=t>>BASEBITS
+		j++
+		t=DChunk(a.w[j])*DChunk(a.w[0]); 
+		for i:=1; i<(j+1)/2; i++ {t+=DChunk(a.w[j-i])*DChunk(a.w[i]) }
+		t+=t; t+=co 
+		t+=DChunk(a.w[j/2])*DChunk(a.w[j/2]); 
+		c.w[j]=Chunk(t)&BMASK;
+		co=t>>BASEBITS; j++
 	}
 
-	for i:=0;i<NLEN;i++ {
-		top,bot:=muladd(a.w[i],a.w[i],0,c.w[2*i])
-		c.w[2*i]=bot
-		c.w[2*i+1]+=top
-		//c.w[2*i+1]+=c.muladd(a.w[i],a.w[i],0,2*i)
-
+	for j:=NLEN-1+(NLEN%2);j<DNLEN-3; {
+		t=DChunk(a.w[NLEN-1])*DChunk(a.w[j-NLEN+1]); 
+		for i:=j-NLEN+2; i<(j+1)/2; i++ {t+=DChunk(a.w[j-i])*DChunk(a.w[i]);  }
+		t+=t; t+=co 
+		c.w[j]=Chunk(t)&BMASK;
+		co=t>>BASEBITS; j++
+		t=DChunk(a.w[NLEN-1])*DChunk(a.w[j-NLEN+1]); 
+		for i:=j-NLEN+2; i<(j+1)/2; i++ {t+=DChunk(a.w[j-i])*DChunk(a.w[i]);  }
+		t+=t;  t+=co 
+		t+=DChunk(a.w[j/2])*DChunk(a.w[j/2]); 
+		c.w[j]=Chunk(t)&BMASK;
+		co=t>>BASEBITS; j++
 	}
-	c.norm()
+
+	t=DChunk(a.w[NLEN-2])*DChunk(a.w[NLEN-1]);
+	t+=t; t+=co
+	c.w[DNLEN-3]=Chunk(t)&BMASK
+	co=t>>BASEBITS
+	
+	t=DChunk(a.w[NLEN-1])*DChunk(a.w[NLEN-1])+co
+	c.w[DNLEN-2]=Chunk(t)&BMASK;
+	co=t>>BASEBITS
+	c.w[DNLEN-1]=Chunk(co)
+
 	return c
 }
 
-func monty(md* BIG, mc Chunk,d* DBIG) *BIG {
-	carry:=Chunk(0)
-	m:=Chunk(0)
-	for i:=0;i<NLEN;i++ {
-		if (mc==-1) { 
-			m=(-d.w[i])&BMASK
-		} else {
-			if (mc==1) {
-				m=d.w[i]
-			} else {m=(mc*d.w[i])&BMASK}
-		}
+func monty(m* BIG, mc Chunk,d* DBIG) *BIG {
+	var dd [NLEN]DChunk
 
-		carry=0
-		for j:=0;j<NLEN;j++ {
-			carry,d.w[i+j]=muladd(m,md.w[j],carry,d.w[i+j])
-				//carry=d.muladd(m,md.w[j],carry,i+j)
-		}
-		d.w[NLEN+i]+=carry
-	}
-
+	var v [NLEN]Chunk
 	b:=NewBIG()
-	for i:=0;i<NLEN;i++ {
-		b.w[i]=d.w[NLEN+i]
+
+	t:=DChunk(d.w[0]); v[0]=(Chunk(t)*mc)&BMASK; t+=DChunk(v[0])*DChunk(m.w[0]); c:=(t>>BASEBITS)+DChunk(d.w[1]); s:=DChunk(0)
+
+	for k:=1;k<NLEN;k++ {
+		t=c+s+DChunk(v[0])*DChunk(m.w[k])
+		for i:=k-1;i>k/2;i-- {t+=DChunk(v[k-i]-v[i])*DChunk(m.w[i]-m.w[k-i])}
+		v[k]=(Chunk(t)*mc)&BMASK; t+=DChunk(v[k])*DChunk(m.w[0]); c=(t>>BASEBITS)+DChunk(d.w[k+1])
+		dd[k]=DChunk(v[k])*DChunk(m.w[k]); s+=dd[k]
 	}
-	b.norm()
-	return b		
+	for k:=NLEN;k<2*NLEN-1;k++ {
+		t=c+s;
+		for i:=NLEN-1;i>=1+k/2;i-- {t+=DChunk(v[k-i]-v[i])*DChunk(m.w[i]-m.w[k-i])}
+		b.w[k-NLEN]=Chunk(t)&BMASK; c=(t>>BASEBITS)+DChunk(d.w[k+1]); s-=dd[k-NLEN+1]
+	}
+	b.w[NLEN-1]=Chunk(c)&BMASK;	
+//	b.norm()
+	return b
 }
+
 
 /* set this[i]+=x*y+c, and return high part */
 func muladd(a Chunk,b Chunk,c Chunk,r Chunk) (Chunk,Chunk) {
-	x0:=a&HMASK
-	x1:=(a>>HBITS)
-	y0:=b&HMASK;
-	y1:=(b>>HBITS)
-	bot:=x0*y0
-	top:=x1*y1
-	mid:=x0*y1+x1*y0
-	x0=mid&HMASK;
-	x1=(mid>>HBITS)
-	bot+=x0<<HBITS; bot+=c; bot+=r 
-	top+=x1;
-	carry:=bot>>BASEBITS
-	bot&=BMASK
-	top+=carry
+	var prod=DChunk(a)*DChunk(b)+DChunk(c)+DChunk(r);
+	bot:=Chunk(prod)&BMASK;
+	top:=Chunk(prod>>BASEBITS);
 	return top,bot
 }
 
-/************************************************************/
+/***************************************************************************/
+
+
 
 func (r *BIG) get(i int) Chunk {
 	return r.w[i] 
@@ -513,8 +514,6 @@ func smul(a *BIG,b *BIG) *BIG {
 	}
 	return c;
 }
-
-
 
 /* Compare a and b, return 0 if a==b, -1 if a<b, +1 if a>b. Inputs must be normalised */
 func comp(a *BIG,b *BIG) int {

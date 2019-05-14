@@ -19,15 +19,15 @@ under the License.
 
 /* AMCL BIG number class */ 
 
-package XXX
+package FP256BN
 
 import "strconv"
-import "github.com/milagro-crypto/amcl/version3/go/amcl"
+import "github.com/onewealthplace/milagro-amcl/version3/go/amcl"
 
 //import "fmt"
 
-const MODBYTES uint=@NB@
-const BASEBITS uint=@BASE@
+const MODBYTES uint=32
+const BASEBITS uint=56
 
 const NLEN int=int((1+((8*MODBYTES-1)/BASEBITS)))
 const DNLEN int=2*NLEN

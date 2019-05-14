@@ -22,7 +22,7 @@ under the License.
 package FP256BN
 
 import "time"
-import "github.com/milagro-crypto/amcl/version3/go/amcl"
+import "github.com/onewealthplace/milagro-amcl/version3/go/amcl"
 
 //import "fmt"
 

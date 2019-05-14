@@ -11,7 +11,7 @@ import (
 	"github.com/hyperledger/fabric/idemix"
 	"github.com/hyperledger/fabric/msp"
 	m "github.com/hyperledger/fabric/protos/msp"
-	"github.com/milagro-crypto/amcl/version3/go/amcl/FP256BN"
+	"github.com/onewealthplace/milagro-amcl/version3/go/amcl/FP256BN"
 	"github.com/pkg/errors"
 )
 

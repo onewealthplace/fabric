@@ -8,8 +8,8 @@ package idemix
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/milagro-crypto/amcl/version3/go/amcl"
-	"github.com/milagro-crypto/amcl/version3/go/amcl/FP256BN"
+	"github.com/onewealthplace/milagro-amcl/version3/go/amcl"
+	"github.com/onewealthplace/milagro-amcl/version3/go/amcl/FP256BN"
 	"github.com/pkg/errors"
 )
 
